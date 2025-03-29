@@ -52,3 +52,6 @@ export default tseslint.config({
   },
 })
 ```
+
+
+https://askomarov.github.io/react-soccer-penalty
