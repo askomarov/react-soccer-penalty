@@ -10,93 +10,12 @@ import {
   OrbitControls,
   PerspectiveCamera,
   useTexture,
-  useGLTF,
 } from '@react-three/drei';
-import { Physics, useSphere, usePlane, useTrimesh } from '@react-three/cannon'; // Заменяем useTrimesh на useBox
-import * as THREE from 'three';
+import { Physics, useSphere, usePlane } from '@react-three/cannon';
+// import * as THREE from 'three';
+import Stadium from './Stadium';
 
-// Константы остаются теми же
-const FIELD_WIDTH = 40;
-const FIELD_LENGTH = 30;
-const PENALTY_SPOT_Z = -5;
-const BALL_RADIUS = 0.11;
-
-function SoccerField() {
-  const grassTexture = useTexture('/textures/grass.jpg');
-  grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
-  grassTexture.repeat.set(20, 20);
-
-  usePlane(() => ({
-    rotation: [-Math.PI / 2, 0, 0],
-    position: [0, 0, 0],
-  }));
-
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-      <planeGeometry args={[FIELD_WIDTH, FIELD_LENGTH]} />
-      <meshStandardMaterial
-        map={grassTexture}
-        roughness={0.8}
-        metalness={0.1}
-      />
-    </mesh>
-  );
-}
-
-// Компонент для ворот с физикой (временная замена на useBox)
-function SoccerGoalModel() {
-  const { scene } = useGLTF('/model/goal/football_goal.glb');
-  const goalRef = useRef<THREE.Group>(null);
-
-  // Извлекаем геометрию из модели
-  const vertices: number[] = [];
-  const indices: number[] = [];
-
-  scene.traverse((child) => {
-    if (child instanceof THREE.Mesh && child.geometry && vertices.length === 0) { // Только первый меш
-      const geometry = child.geometry;
-      const positionAttribute = geometry.attributes.position;
-      const indexAttribute = geometry.index;
-
-      vertices.push(...Array.from(positionAttribute.array));
-      if (indexAttribute) {
-        indices.push(...Array.from(indexAttribute.array));
-      } else {
-        indices.push(...Array.from({ length: positionAttribute.count }, (_, i) => i));
-      }
-    }
-  });
-
-  console.log('Total vertices:', vertices.length);
-  console.log('Total indices:', indices.length);
-
-  // Добавляем физику с useTrimesh
-  try {
-    useTrimesh(
-      () => ({
-        mass: 0,
-        position: [0, 0, FIELD_LENGTH / 2],
-        rotation: [0, Math.PI, 0],
-        args: [vertices, indices],
-      }),
-      goalRef
-    );
-  } catch (error) {
-    console.error('Error in useTrimesh:', error);
-  }
-
-  return (
-    <primitive
-      ref={goalRef}
-      object={scene}
-      position={[0, 0, FIELD_LENGTH / 2]}
-      rotation={[0, Math.PI, 0]}
-      scale={[1, 1, 1]}
-      castShadow
-      receiveShadow
-    />
-  );
-}
+const BALL_RADIUS = 0.5;
 
 interface SoccerBallHandle {
   api: any;
@@ -110,12 +29,13 @@ const SoccerBall = forwardRef<
   { resetPosition: [number, number, number] }
 >((props, ref) => {
   const ballTexture = useTexture('/textures/soccer-ball.png');
-  ballTexture.wrapS = ballTexture.wrapT = THREE.RepeatWrapping;
-  ballTexture.repeat.set(1, 1);
   const [sphereRef, api] = useSphere(() => ({
-    mass: 0.43,
+    mass: 5,
     position: props.resetPosition,
     args: [BALL_RADIUS],
+    velocity: [0, 0, 0],
+    linearDamping: 0.2,
+    angularDamping: 0.5
   }));
 
   const [power, setPower] = useState(0);
@@ -124,7 +44,7 @@ const SoccerBall = forwardRef<
     const [dirX, dirY] = direction;
     api.velocity.set(0, 0, 0);
     api.angularVelocity.set(0, 0, 0);
-    api.applyImpulse([dirX, dirY, kickPower * 10], [0, 0, 0]);
+    api.applyImpulse([dirX, dirY, kickPower * 10000], [0, 0, 0]);
     setPower(0);
   };
 
@@ -243,11 +163,7 @@ function KickControl({
 }
 
 export default function SoccerScene() {
-  const initialBallPosition: [number, number, number] = [
-    0,
-    BALL_RADIUS,
-    PENALTY_SPOT_Z,
-  ];
+  const initialBallPosition: [number, number, number] = [23.5, 10, 45];
   const ballRef = useRef<SoccerBallHandle>(null);
 
   const resetBall = () => {
@@ -261,6 +177,22 @@ export default function SoccerScene() {
 
   const handleKick = (direction: [number, number], power: number) => {
     ballRef.current?.kick(direction, power);
+  };
+
+  const Ground = () => {
+    const [planeRef] = usePlane(() => ({
+      mass: 0,
+      position: [23.5, 1.13, 45],
+      rotation: [-Math.PI / 2, 0, 0],
+      material: { restitution: 0.8 },
+    }));
+
+    return (
+      <mesh ref={planeRef} receiveShadow>
+        <planeGeometry args={[98, 173]} /> {/* Точные размеры: ширина 98, глубина 173 */}
+        <meshStandardMaterial color="red"  wireframe />
+      </mesh>
+    );
   };
 
   return (
@@ -278,39 +210,39 @@ export default function SoccerScene() {
       <Canvas
         shadows
         gl={{ antialias: true }}
-        camera={{ position: [0, 5, -10], fov: 50 }}
+        camera={{ position: [23.5, 20, 25], fov: 50 }}
       >
         <PerspectiveCamera
           makeDefault
-          position={[0, 1, -10]}
+          position={[23.5, 20, 25]}
           fov={50}
           near={0.1}
-          far={100}
+          far={1000}
         />
         <OrbitControls
-          target={[0, 0, FIELD_LENGTH / 2]}
+          target={[23.5, 0, 45]}
           maxPolarAngle={Math.PI / 2}
-          minDistance={2}
-          maxDistance={30}
+          minDistance={5}
+          maxDistance={200}
         />
 
         <ambientLight intensity={0.4} />
         <directionalLight
-          position={[5, 10, 5]}
+          position={[10, 20, 10]}
           intensity={1.5}
           castShadow
           shadow-mapSize={[1024, 1024]}
           shadow-camera-near={1}
-          shadow-camera-far={50}
-          shadow-camera-left={-20}
-          shadow-camera-right={20}
-          shadow-camera-top={20}
-          shadow-camera-bottom={-20}
+          shadow-camera-far={100}
+          shadow-camera-left={-50}
+          shadow-camera-right={50}
+          shadow-camera-top={50}
+          shadow-camera-bottom={-50}
         />
 
         <Physics gravity={[0, -9.81, 0]}>
-          <SoccerField />
-          <SoccerGoalModel />
+          <Ground />
+          <Stadium />
           <SoccerBall resetPosition={initialBallPosition} ref={ballRef} />
         </Physics>
       </Canvas>
