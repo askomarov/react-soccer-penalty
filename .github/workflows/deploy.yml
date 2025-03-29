@@ -1,52 +1,49 @@
-name: Build and Deploy to GitHub Pages
+# Simple workflow for deploying static content to GitHub Pages
+name: Deploy static content to Pages
 
-# Когда запускать workflow
 on:
+  # Запуск на пуш в ветку main
   push:
-    branches:
-      - main  # Укажи ветку, с которой хочешь деплоить (например, main или master)
+    branches: ['main']
 
-# Права доступа
+  # Позволяет вручную запустить workflow через вкладку Actions
+  workflow_dispatch:
+
+# Установка прав GITHUB_TOKEN для деплоя на GitHub Pages
 permissions:
-  contents: write  # Для записи в репозиторий
-  pages: write     # Для деплоя на GitHub Pages
-  id-token: write  # Для аутентификации
+  contents: read
+  pages: write
+  id-token: write
 
-# Задачи (jobs)
+# Разрешить только один деплой одновременно
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest  # Используем последнюю версию Ubuntu
-
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
     steps:
-      # 1. Чекаут кода из репозитория
       - name: Checkout
         uses: actions/checkout@v4
-
-      # 2. Установка Node.js (если проект на JS)
-      - name: Setup Node.js
+      - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'  # Укажи нужную версию Node.js
-
-      # 3. Установка зависимостей
-      - name: Install Dependencies
-        run: npm install  # Или yarn install, если используешь Yarn
-
-      # 4. Сборка проекта
+          node-version: 20
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm i
       - name: Build
-        run: npm run build  # Укажи свою команду сборки
-
-      # 5. Настройка GitHub Pages
+        run: npm run build  # Запуск сборки
       - name: Setup Pages
-        uses: actions/configure-pages@v3
-
-      # 6. Загрузка артефакта (собранных файлов)
-      - name: Upload Artifact
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist  # Укажи папку с результатом сборки (например, build, dist, public)
-
-      # 7. Деплой на GitHub Pages
+          path: './dist'  # Загружаем содержимое папки dist
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
