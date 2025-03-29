@@ -44,7 +44,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./build  # Укажи папку с результатом сборки (например, build, dist, public)
+          path: ./dist  # Укажи папку с результатом сборки (например, build, dist, public)
 
       # 7. Деплой на GitHub Pages
       - name: Deploy to GitHub Pages
