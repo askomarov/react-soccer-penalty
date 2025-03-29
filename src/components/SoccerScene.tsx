@@ -44,7 +44,7 @@ const SoccerBall = forwardRef<
     const [dirX, dirY] = direction;
     api.velocity.set(0, 0, 0);
     api.angularVelocity.set(0, 0, 0);
-    api.applyImpulse([dirX, dirY, kickPower * 10000], [0, 0, 0]);
+    api.applyImpulse([dirX, dirY, kickPower * 500], [0, 0, 0]);
     setPower(0);
   };
 
@@ -163,7 +163,7 @@ function KickControl({
 }
 
 export default function SoccerScene() {
-  const initialBallPosition: [number, number, number] = [23.5, 10, 45];
+  const initialBallPosition: [number, number, number] = [23.5, 10, 80];
   const ballRef = useRef<SoccerBallHandle>(null);
 
   const resetBall = () => {
@@ -210,17 +210,17 @@ export default function SoccerScene() {
       <Canvas
         shadows
         gl={{ antialias: true }}
-        camera={{ position: [23.5, 20, 25], fov: 50 }}
+        // camera={{ position: [23.5, 5, 10], fov: 50 }}
       >
         <PerspectiveCamera
           makeDefault
-          position={[23.5, 20, 25]}
+          position={[23.5, 20, 40]}
           fov={50}
           near={0.1}
           far={1000}
         />
         <OrbitControls
-          target={[23.5, 0, 45]}
+          target={[23.5, 1.1, 80]}
           maxPolarAngle={Math.PI / 2}
           minDistance={5}
           maxDistance={200}
