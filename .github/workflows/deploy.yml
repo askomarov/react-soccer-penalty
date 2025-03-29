@@ -1,0 +1,52 @@
+name: Build and Deploy to GitHub Pages
+
+# Когда запускать workflow
+on:
+  push:
+    branches:
+      - main  # Укажи ветку, с которой хочешь деплоить (например, main или master)
+
+# Права доступа
+permissions:
+  contents: write  # Для записи в репозиторий
+  pages: write     # Для деплоя на GitHub Pages
+  id-token: write  # Для аутентификации
+
+# Задачи (jobs)
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest  # Используем последнюю версию Ubuntu
+
+    steps:
+      # 1. Чекаут кода из репозитория
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Установка Node.js (если проект на JS)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'  # Укажи нужную версию Node.js
+
+      # 3. Установка зависимостей
+      - name: Install Dependencies
+        run: npm install  # Или yarn install, если используешь Yarn
+
+      # 4. Сборка проекта
+      - name: Build
+        run: npm run build  # Укажи свою команду сборки
+
+      # 5. Настройка GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      # 6. Загрузка артефакта (собранных файлов)
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./build  # Укажи папку с результатом сборки (например, build, dist, public)
+
+      # 7. Деплой на GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
