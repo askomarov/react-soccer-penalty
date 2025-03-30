@@ -2,7 +2,7 @@
   "name": "penalty",
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://askomarov.github.io/react-soccer-penalty",
+  "homepage": "https://askomarov.github.io/react-soccer-penalty/",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
